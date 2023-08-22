@@ -52,16 +52,16 @@ listen bgp port {{getv "/global/listen_port"}};
 {{- end}}
 
 {{- define "LOGGING"}}
-{{- $node_logging_key := printf "/host/%s/loglevel" (getenv "NODENAME")}}
+{{- $node_logging_key := "debug"}}
 {{- if exists $node_logging_key}}
-{{- $logging := getv $node_logging_key}}
+{{- $logging := "debug"}}
 {{- if eq $logging "debug"}}
   debug all;
 {{- else if ne $logging "none"}}
   debug { states };
 {{- end}}
 {{- else if exists "/global/loglevel"}}
-{{- $logging := getv "/global/loglevel"}}
+{{- $logging := "debug"}}
 {{- if eq $logging "debug"}}
   debug all;
 {{- else if ne $logging "none"}}
@@ -74,6 +74,7 @@ listen bgp port {{getv "/global/listen_port"}};
 
 # Configure synchronization between routing tables and kernel.
 protocol kernel {
+{{- template "LOGGING"}}
   learn;             # Learn all alien routes from the kernel
   persist;           # Don't remove routes on bird shutdown
   scan time 2;       # Scan kernel routing table every 2 seconds
