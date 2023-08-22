@@ -74,7 +74,6 @@ listen bgp port {{getv "/global/listen_port"}};
 
 # Configure synchronization between routing tables and kernel.
 protocol kernel {
-{{- template "LOGGING"}}
   learn;             # Learn all alien routes from the kernel
   persist;           # Don't remove routes on bird shutdown
   scan time 2;       # Scan kernel routing table every 2 seconds
@@ -91,7 +90,6 @@ protocol kernel {
 
 # Watch interface up/down events.
 protocol device {
-{{- template "LOGGING"}}
   scan time 2;    # Scan interfaces every 2 seconds
 }
 
