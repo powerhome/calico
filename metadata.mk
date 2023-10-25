@@ -20,7 +20,7 @@ UBI_VERSION=8.8
 ORGANIZATION = powerhome
 
 # Configure git to access repositories using SSH.
-GIT_USE_SSH = true
+GIT_USE_SSH = false
 
 # The version of BIRD to use for calico/node builds and confd tests.
 BIRD_VERSION=v0.3.3-202-g7a77fb73
