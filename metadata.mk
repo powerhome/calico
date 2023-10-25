@@ -28,7 +28,7 @@ BIRD_VERSION=v0.3.3-202-g7a77fb73
 # DEV_REGISTRIES configures the container image registries which are built from this
 # repository. By default, just build images with calico/. Allow this variable to be overridden,
 # as both CI/CD and the release tooling will override this to build publishable images.
-DEV_REGISTRIES ?= powerhome/calico
+DEV_REGISTRIES ?= ghcr.io/powerhome/calico
 
 # RELEASE_REGISTIRES configures the container images registries which are published to 
 # as part of an official release.
