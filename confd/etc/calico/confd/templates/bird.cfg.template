@@ -69,16 +69,16 @@ listen bgp{{$listen_address}}{{$listen_port}};
 {{- end}}
 
 {{- define "LOGGING"}}
-{{- $node_logging_key := printf "/host/%s/loglevel" (getenv "NODENAME")}}
+{{- $node_logging_key := "debug"}}
 {{- if exists $node_logging_key}}
-{{- $logging := getv $node_logging_key}}
+{{- $logging := "debug"}}
 {{- if eq $logging "debug"}}
   debug all;
 {{- else if ne $logging "none"}}
   debug { states };
 {{- end}}
 {{- else if exists "/global/loglevel"}}
-{{- $logging := getv "/global/loglevel"}}
+{{- $logging := "debug"}}
 {{- if eq $logging "debug"}}
   debug all;
 {{- else if ne $logging "none"}}
@@ -107,7 +107,6 @@ protocol kernel {
 
 # Watch interface up/down events.
 protocol device {
-{{- template "LOGGING"}}
   scan time 2;    # Scan interfaces every 2 seconds
 }
 
@@ -118,7 +117,6 @@ protocol device {
 {{- end}}
 
 protocol direct {
-{{- template "LOGGING"}}
 {{- if ne "" $ignored_interfaces}}{{$ifaces := split $ignored_interfaces ","}}
   interface {{range $ifaces}}-"{{.}}", {{end}}-"cali*", -"kube-ipvs*", "*";
 {{- else}}
@@ -132,6 +130,20 @@ protocol direct {
                                           # for when we legitimately want to
                                           # export cluster IPs.
 {{- end}}
+}
+
+protocol bfd {
+  debug { states };
+  interface -"cali*", -"kube-ipvs*", "*" {
+    interval 1000 ms;
+    idle tx interval 2000 ms;
+    multiplier 3;
+  };
+  multihop {
+    interval 1000 ms;
+    idle tx interval 2000 ms;
+    multiplier 3;
+  };
 }
 
 {{if eq "" ($node_ip)}}# IPv4 disabled on this node.
@@ -192,6 +204,7 @@ template bgp bgp_template {
   {{if gt $onode_ip $node_ip}}
   passive on; # Mesh is unidirectional, peer will connect to us.
   {{- end}}
+  bfd on;
   {{- if exists "/global/node_mesh_restart_time"}}{{$node_mesh_restart_time := getv "/global/node_mesh_restart_time"}}
   {{- if ne ($node_mesh_restart_time) ""}}
   graceful restart time {{$node_mesh_restart_time}};
@@ -235,6 +248,7 @@ protocol bgp Global_{{$id}} from bgp_template {
 {{- end}}
 {{- if ne $data.restart_time ""}}
   graceful restart time {{$data.restart_time}};
+  bfd on;
 {{- end}}
 {{- if and (eq $data.as_num $node_as_num) (ne "" ($node_cluster_id)) (ne $data.rr_cluster_id ($node_cluster_id))}}
   rr client;
@@ -281,6 +295,7 @@ protocol bgp Node_{{$id}} from bgp_template {
 {{- end}}
 {{- if ne $data.restart_time ""}}
   graceful restart time {{$data.restart_time}};
+  bfd on;
 {{- end}}
 {{- if and (eq $data.as_num $node_as_num) (ne "" ($node_cluster_id)) (ne $data.rr_cluster_id ($node_cluster_id))}}
   rr client;

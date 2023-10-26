@@ -1,4 +1,4 @@
-PACKAGE_NAME = github.com/projectcalico/calico
+PACKAGE_NAME = github.com/powerhome/calico
 
 include metadata.mk
 include lib.Makefile
@@ -15,7 +15,7 @@ DOCKER_RUN := mkdir -p ./.go-pkg-cache bin $(GOMOD_CACHE) && \
 		-e OS=$(BUILDOS) \
 		-e GOOS=$(BUILDOS) \
 		-e GOFLAGS=$(GOFLAGS) \
-		-v $(CURDIR):/go/src/github.com/projectcalico/calico:rw \
+		-v $(CURDIR):/go/src/github.com/powerhome/calico:rw \
 		-v $(CURDIR)/.go-pkg-cache:/go-cache:rw \
 		-w /go/src/$(PACKAGE_NAME)
 
