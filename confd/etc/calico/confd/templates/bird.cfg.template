@@ -52,16 +52,16 @@ listen bgp port {{getv "/global/listen_port"}};
 {{- end}}
 
 {{- define "LOGGING"}}
-{{- $node_logging_key := printf "/host/%s/loglevel" (getenv "NODENAME")}}
+{{- $node_logging_key := "debug"}}
 {{- if exists $node_logging_key}}
-{{- $logging := getv $node_logging_key}}
+{{- $logging := "debug"}}
 {{- if eq $logging "debug"}}
   debug all;
 {{- else if ne $logging "none"}}
   debug { states };
 {{- end}}
 {{- else if exists "/global/loglevel"}}
-{{- $logging := getv "/global/loglevel"}}
+{{- $logging := "debug"}}
 {{- if eq $logging "debug"}}
   debug all;
 {{- else if ne $logging "none"}}
@@ -90,7 +90,6 @@ protocol kernel {
 
 # Watch interface up/down events.
 protocol device {
-{{- template "LOGGING"}}
   scan time 2;    # Scan interfaces every 2 seconds
 }
 
@@ -107,15 +106,17 @@ protocol direct {
                                           # export cluster IPs.
 }
 
-protocol bfd bfd_global {
+protocol bfd {
+  debug { states };
   interface -"cali*", -"kube-ipvs*", "*" {
-    interval 100ms;
-    idle tx interval 1000ms;
-    multiplier 5;
+    interval 500 ms;
+    idle tx interval 2000 ms;
+    multiplier 16;
   };
   multihop {
-    interval 100ms;
-    multiplier 5;
+    interval 500 ms;
+    idle tx interval 2000 ms;
+    multiplier 16;
   };
 }
 
@@ -134,12 +135,10 @@ template bgp bgp_template {
                      # topology is and therefore have to trust the ToR/RR.
   export filter calico_export_to_bgp_peers;  # Only want to export routes for workloads.
   add paths on;
-  graceful restart time 5;  # See comment in kernel section about graceful restart.
-  hold time 30;
-  connect delay time 2;
+  graceful restart;  # See comment in kernel section about graceful restart.
+  connect delay time 4;
   connect retry time 5;
   error wait time 5,30;
-  bfd on;
 }
 
 # ------------- Node-to-node mesh -------------
@@ -178,6 +177,8 @@ template bgp bgp_template {
   {{if gt $onode_ip $node_ip}}
   passive on; # Mesh is unidirectional, peer will connect to us.
   {{- end}}
+  graceful restart time 120;
+  bfd graceful;
 }{{end}}{{end}}{{end}}
 {{else}}
 # Node-to-node mesh disabled
@@ -203,6 +204,7 @@ protocol bgp Global_{{$id}} from bgp_template {
 {{- end}}
 {{- if ne $data.restart_time ""}}
   graceful restart time {{$data.restart_time}};
+  bfd graceful;
 {{- end}}
 {{- if and (eq $data.as_num $node_as_num) (ne "" ($node_cluster_id)) (ne $data.rr_cluster_id ($node_cluster_id))}}
   rr client;
@@ -239,6 +241,7 @@ protocol bgp Node_{{$id}} from bgp_template {
 {{- end}}
 {{- if ne $data.restart_time ""}}
   graceful restart time {{$data.restart_time}};
+  bfd graceful;
 {{- end}}
 {{- if and (eq $data.as_num $node_as_num) (ne "" ($node_cluster_id)) (ne $data.rr_cluster_id ($node_cluster_id))}}
   rr client;
