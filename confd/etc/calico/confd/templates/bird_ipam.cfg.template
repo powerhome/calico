@@ -70,11 +70,7 @@ function reject_bogons()
   }
 }
 
-
-# Directly connected iBGP peers (not traversing of other ASes to reach one of
-# our own) don't have a bgp_path field.
-
-function calico_reject_learn_self_transit() {
+function reject_incoming_transit() {
   if (defined(bgp_path) && bgp_path.len != 0) then {
     if (bgp_path ~ [= * {{$node_as_num}} * =]) then {
       reject;
@@ -82,32 +78,45 @@ function calico_reject_learn_self_transit() {
   }
 }
 
-filter calico_import_from_bgp_peers {
-  calico_reject_learn_self_transit();
+function reject_outgoing_transit() {
+  if (bgp_path.len > 1) then {
+    if (bgp_path ~ [= * {{$node_as_num}} =]) then {
+      reject;
+    }
+  }
+}
+
+function bgp_reject_exports() {
   reject_default_route();
   reject_bogons();
+  reject_disabled_pools();
+}
+
+function bgp_export_and_modify() {
+  apply_communities();
+  calico_aggr();
+  export_static();
+  export_pools();
+}
+
+filter calico_import_from_bgp_peers {
+  reject_bogons();
+  reject_default_route();
+  reject_incoming_transit();
   accept;
 }
 
-filter calico_export_to_bgp_peers {
-  reject_default_route();
-  reject_bogons();
+filter calico_export_to_ibgp_peers {
+  bgp_reject_exports();
+  bgp_export_and_modify();
+  reject;
+}
 
-  # NOTICE: Use "nodeSelector: !all()" instead of setting "disabled: true" in
-  # order to use IPPools to define which encapsulation method (if any) shall be
-  # used for the given route.
-  reject_disabled_pools();
-
-  apply_communities();
-  calico_aggr(); # Summarization
-
-  # Export routes programmed into BGPConfiguration:
-  # service{Cluster,External,LoadBalancer}IPs and generic prefixAdvertisements.
-  export_static();
-
-  export_pools();
-
-  reject; # Catch-all reject
+filter calico_export_to_ebgp_peers {
+  bgp_reject_exports();
+  bgp_reject_outgoing_transit();
+  bgp_export_and_modify();
+  reject;
 }
 
 {{$network_key := printf "/bgp/v1/host/%s/network_v4" (getenv "NODENAME")}}

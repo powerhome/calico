@@ -133,7 +133,7 @@ template bgp bgp_template {
   gateway recursive; # This should be the default, but just in case.
   import filter calico_import_from_bgp_peers;  # We want to rely on underlay
                                                # to provide default route.
-  export filter calico_export_to_bgp_peers;  # Only want to export routes for workloads.
+  export filter calico_export_to_ibgp_peers;  # Only want to export routes for workloads.
   add paths on;
   graceful restart;  # See comment in kernel section about graceful restart.
   hold time 9;
@@ -201,6 +201,9 @@ template bgp bgp_template {
 {{- else}}
 protocol bgp Global_{{$id}} from bgp_template {
   neighbor {{$data.ip}} {{if $data.port }}port {{ $data.port }} {{end}}as {{$data.as_num}};
+{{- if ne $data.as_num $node_as_num}}
+  export filter calico_export_to_ebgp_peers;
+{{- end}}
 {{- if eq $data.source_addr "UseNodeIP"}}
   source address {{$node_ip}};  # The local address we use for the TCP connection
 {{- end}}
@@ -238,6 +241,9 @@ protocol bgp Global_{{$id}} from bgp_template {
 {{- else}}
 protocol bgp Node_{{$id}} from bgp_template {
   neighbor {{$data.ip}} {{if $data.port }}port {{ $data.port }} {{end}}as {{$data.as_num}};
+{{- if ne $data.as_num $node_as_num}}
+  export filter calico_export_to_ebgp_peers;
+{{- end}}
 {{- if eq $data.source_addr "UseNodeIP"}}
   source address {{$node_ip}};  # The local address we use for the TCP connection
 {{- end}}
