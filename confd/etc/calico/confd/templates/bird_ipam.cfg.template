@@ -86,13 +86,13 @@ function reject_outgoing_transit() {
   }
 }
 
-function bgp_reject_exports() {
+function reject_exports() {
   reject_default_route();
   reject_bogons();
   reject_disabled_pools();
 }
 
-function bgp_export_and_modify() {
+function export_and_modify() {
   apply_communities();
   calico_aggr();
   export_static();
@@ -107,15 +107,15 @@ filter calico_import_from_bgp_peers {
 }
 
 filter calico_export_to_ibgp_peers {
-  bgp_reject_exports();
-  bgp_export_and_modify();
+  reject_exports();
+  export_and_modify();
   reject;
 }
 
 filter calico_export_to_ebgp_peers {
-  bgp_reject_exports();
-  bgp_reject_outgoing_transit();
-  bgp_export_and_modify();
+  reject_exports();
+  reject_outgoing_transit();
+  export_and_modify();
   reject;
 }
 
