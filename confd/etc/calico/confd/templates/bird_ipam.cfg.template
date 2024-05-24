@@ -80,7 +80,7 @@ function reject_incoming_transit() {
 
 function reject_outgoing_transit() {
   if (bgp_path.len > 1) then {
-    if (bgp_path ~ [= * {{$node_as_num}} =]) then {
+    if (bgp_path ~ [= {{$node_as_num}} * =]) then {
       reject;
     }
   }
