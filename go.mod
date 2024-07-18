@@ -13,7 +13,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/ec2 v1.21.0
 	github.com/aws/smithy-go v1.9.0
 	github.com/buger/jsonparser v1.0.0
-	github.com/containernetworking/cni v0.8.0
+	github.com/containernetworking/cni v0.8.1
 	github.com/containernetworking/plugins v0.8.5
 	github.com/coreos/go-semver v0.3.0
 	github.com/davecgh/go-spew v1.1.1
